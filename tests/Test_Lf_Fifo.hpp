@@ -13,20 +13,39 @@
 
 namespace {
 
-    // messsage class
-    struct Q_Test_Item
+    class Lf_FifoTest : public ::testing::Test 
     {
-        int itemID;
-        int execCount;
-        // optional function type called from the execute() method?
-    
-        void execute()
-        {
-            // do something cool that will show this is working
-        }
-    }
+        // per-case func
+        //
+        static void SetUpTestCase()
+        {}
 
-    Lf_Fifo<Q_Test_Item, 1024> testFifo;
+        static void TearDownTestCase()
+        {}
+        
+        // hate the v-word
+        virtual void SetUp()
+        {}
+
+        virtual void TearDown()
+        {}
+
+        // messsage class
+        struct Q_Test_Item
+        {
+            int itemID;
+            int execCount;
+            // optional function type called from the execute() method?
+        
+            void execute()
+            {
+                // do something cool that will show this is working
+            }
+        }
+
+        Lf_Fifo<Q_Test_Item, 1024> testFifo;
+
+    }
 }
 
 #endif /* _TEST_LF_FIFO_H_ */
