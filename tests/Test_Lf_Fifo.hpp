@@ -13,10 +13,31 @@
 
 namespace {
 
+    // messsage class
+    struct Q_Test_Item
+    {
+        static unsigned int itemCount;
+        
+        Q_Test_Item() : itemID(itemCount++), execCount(0)
+        {
+        }
+        int itemID;
+        int execCount;
+        // optional function type called from the execute() method?
+        void execute()
+        {
+            execCount++;
+        }
+    };
+    
+    unsigned int Q_Test_Item::itemCount = 0;
+
     class Lf_FifoTest : public ::testing::Test 
     {
+        Q_Test_Item qTestArray1[128];
+        Q_Test_Item qTestArray2[128];
+
         // per-case func
-        //
         static void SetUpTestCase()
         {}
 
@@ -30,22 +51,13 @@ namespace {
         virtual void TearDown()
         {}
 
-        // messsage class
-        struct Q_Test_Item
-        {
-            int itemID;
-            int execCount;
-            // optional function type called from the execute() method?
-        
-            void execute()
-            {
-                // do something cool that will show this is working
-            }
-        }
+   
+    };
 
-        Lf_Fifo<Q_Test_Item, 1024> testFifo;
+        // globally avail Q    
+    Lf_Fifo<Q_Test_Item, 1024> testFifo;
 
-    }
+
 }
 
 #endif /* _TEST_LF_FIFO_H_ */

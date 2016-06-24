@@ -10,13 +10,17 @@
 
 #include <atomic>
 
+
+using std::memory_order_relaxed;
+using std::memory_order_release;
+
 // NodeT must have an execute() method
 // NodeN should always be a power of 2!
 template <class NodeT, int NodeN>
 class Lf_Fifo
 {
 public:
-    Lf_Fifo : readPos(0), writePos(0) {}
+    Lf_Fifo() : readPos(0), writePos(0) {}
    
     // status
     bool isClear()
@@ -77,10 +81,10 @@ private:
     unsigned int nextIndex(unsigned int index)
     {
         // avoid the modulus and AND instead ( NodeN is a pow(2, x) )
-        return (index+1) & (NodeN - 1)
+        return (index+1) & (NodeN - 1);
     }
     std::atomic<unsigned int> readPos, writePos;
-    NodeT* itemQ[NodeN];
-}
+    NodeT itemQ[NodeN];
+};
 
 #endif /* _Lf_Fifo_ */
