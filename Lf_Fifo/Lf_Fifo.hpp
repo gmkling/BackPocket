@@ -1,7 +1,7 @@
 // Lf_Fifo.h
 //
 // A lock-free queue for a generic array of pointers to commands
-//
+// Single-Producer, Single-Consumer
 // Copyright © 2016 Garry Kling
 //
 
@@ -16,6 +16,8 @@ using std::memory_order_release;
 
 // NodeT must have an execute() method
 // NodeN should always be a power of 2!
+// should only be used single producer, single consumer
+
 template <class NodeT, int NodeN>
 class Lf_Fifo
 {
