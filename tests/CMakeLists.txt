@@ -8,10 +8,12 @@ enable_testing()
 set(PROJECT_TEST_NAME test_BackPocket)
 include_directories( ${GTEST_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/Lf_Fifo/
-                    )
+                     ${CMAKE_SOURCE_DIR}/T_Fifo/ 
+                   )
 Message("Gtest include: ${GTEST_INCLUDE_DIRS}")
 set(TEST_BACKPOCKET_SRC_FILES
     Test_Lf_Fifo.cpp
+    Test_T_Fifo.cpp
     )
 
 # Add sys specific tests as needed
