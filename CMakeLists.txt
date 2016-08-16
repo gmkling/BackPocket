@@ -32,6 +32,8 @@ set(EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
 add_subdirectory(${EXT_PROJECTS_DIR}/gtest)
 #add_subdirectory(midi)
 add_subdirectory(tests)
+add_subdirectory(T_Fifo)
+add_subdirectory(Lf_Fifo)
 #add_subdirectory(util)
 
 # list the subprojects for libgmk
@@ -44,7 +46,8 @@ add_subdirectory(tests)
 # can we use compiler flags here to suppress logging?
 
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -std=c++11 -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -std=c++11 -Wall")
+set(STATIC_LINKER_FLAGS "-Wl,--export-all-symbols")
 
 if(UNIX)
 

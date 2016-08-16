@@ -12,7 +12,9 @@ include_directories( ${GTEST_INCLUDE_DIRS}
                    )
 Message("Gtest include: ${GTEST_INCLUDE_DIRS}")
 set(TEST_BACKPOCKET_SRC_FILES
-    Test_Lf_Fifo.cpp
+    ../T_Fifo/T_Fifo.hpp
+    ../Lf_Fifo/Lf_Fifo.hpp
+    #Test_Lf_Fifo.cpp
     Test_T_Fifo.cpp
     )
 
