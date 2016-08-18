@@ -12,17 +12,21 @@
 #include <cmath>
 #include <cstdlib>
 #include <chrono>
+#include <random>
 
 
 TEST(T_FifoTest, testT_Fifo_nicely)
 {
     // test single-producer, single consumer
     // just going to fire off two threads
-    // producer will read from inQuote one by one with sleep 
+    // producer will read from inQuote
+    //  in chunks that are the lesser of whats avail to write
+    //  and remains to be read
     // consumer will peal them off the same way
     // when they are done, outQuote should match inQuote
-    
-    T_Fifo theFifo;
+
+    int qSize = 8;
+    T_Fifo theFifo(qSize);
     int quoteSize = std::strlen(inQuote);
     memset(outQuote, 0, quoteSize);
     const char * inPtr = &inQuote[0];
@@ -32,8 +36,8 @@ TEST(T_FifoTest, testT_Fifo_nicely)
         
         int nBytesToRead = 0;
         int totalBytesWritten = 0;
-        char readCache[8];
-        memset(readCache, 0, 8);
+        char readCache[qSize];
+        memset(readCache, 0, qSize);
         
         while( totalBytesWritten < quoteSize)
         {
@@ -41,30 +45,21 @@ TEST(T_FifoTest, testT_Fifo_nicely)
             int bytesAvailToWrite = 0;
             
             bytesAvailToWrite = theFifo.startWrite();
-            
             if (bytesAvailToWrite <= 0) { continue; }
-
             // minimum of what can be written and what is left
-            nBytesToRead = std::min(bytesAvailToWrite, quoteSize-totalBytesWritten); //(floor((rand()/RAND_MAX)*bytesAvail)) + 1;
-            // read from inQuote
+            nBytesToRead = std::min(bytesAvailToWrite, quoteSize-totalBytesWritten);
             memcpy(readCache, inPtr+totalBytesWritten, nBytesToRead);
-            // push into T_Fifo
             bytesWritten = theFifo.writeBytes((void*)readCache, nBytesToRead);
             totalBytesWritten += bytesWritten;
-            //std::cout<<"nBytesToRead: "<<nBytesToRead<<std::endl;
-            //std::cout<<"nBytes IN: "<<nBytesRead<<std::endl;
         }
-
-        // say something
-        //std::cout<<"Finished writing quote to queue: "<<nBytesRead<<" of "<<quoteSize<<" bytes read."<<std::endl;
     };
     
     auto conFunc = [&](){
            
         int nBytesToRead = 0;
         int nBytesRead = 0; 
-        char consumeCache[8];
-        memset(consumeCache, 32, 8);
+        char consumeCache[qSize];
+        memset(consumeCache, 0, qSize);
 
         while( nBytesRead < quoteSize)
         {
@@ -72,32 +67,19 @@ TEST(T_FifoTest, testT_Fifo_nicely)
             int bytesAvailToRead = 0;
             
             bytesAvailToRead = theFifo.startRead();
-            
-            // if nothing is avail, go around the horn until n>0
-            // I believe we could spin here if byteAvail never rises and nBytesRead never does either
             if (bytesAvailToRead == 0) { continue; }
-
-            // do the minimum of the available vs. what is left
             nBytesToRead = std::min(bytesAvailToRead, (quoteSize-nBytesRead));
-
-            // pull from T_Fifo
             bytesRead = theFifo.readBytes((void*)consumeCache, nBytesToRead);
-            // write data to outQuote
             memcpy(outPtr+nBytesRead, &consumeCache, bytesRead);
-        
             nBytesRead += bytesRead;
-
-          // std::cout<<"nBytes OUT: "<<nBytesRead<<std::endl;
         }
-
-        //std::cout<<"Finished reading quote from queue: "<<nBytesRead<<" of "<<quoteSize<<" bytes read."<<std::endl;
     };
 
     std::thread producer(prodFunc);
     std::thread consumer(conFunc);
     
     try{
-        // join the threads so we don't dump core
+        // join the threads
         producer.join();
         consumer.join();
     } catch(const std::system_error& e) {
@@ -114,9 +96,97 @@ TEST(T_FifoTest, testT_Fifo_nicely)
     int result = strncmp(inQuote, outQuote, std::strlen(inQuote));
     EXPECT_EQ(0, result);
     std::cout<<"Test complete."<<std::endl;
-    delete[] outQuote;
 }
 
+TEST(T_FifoTest, testT_Fifo_roughly)
+{
+    // test single-producer, single consumer
+    // just going to fire off two threads
+    // producer will read from inQuote
+    //  in chunks that are the lesser of: a) whats avail to write
+    //  b)remains to be read c) a random number x where 0<x<qSize
+    // consumer will peal them off the same way
+    // when they are done, outQuote should match inQuote
+
+    int qSize = 16;
+    T_Fifo theFifo(qSize);
+    int quoteSize = std::strlen(inQuote);
+    memset(outQuote, 0, quoteSize);
+    const char * inPtr = &inQuote[0];
+    char * outPtr = &outQuote[0];
+
+    // random numbers
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<int> dist(1, qSize-1);
+
+    auto prodFunc = [&](){
+
+        int nBytesToRead = 0;
+        int totalBytesWritten = 0;
+        char readCache[qSize];
+        memset(readCache, 0, qSize);
+
+        while( totalBytesWritten < quoteSize)
+        {
+            int bytesWritten = 0;
+            int bytesAvailToWrite = 0;
+            int randBytesToWrite = dist(mt);
+
+            bytesAvailToWrite = theFifo.startWrite();
+            if (bytesAvailToWrite <= 0) { continue; }
+            // minimum of what can be written and what is left
+            nBytesToRead = std::min({bytesAvailToWrite, quoteSize-totalBytesWritten, randBytesToWrite});
+            memcpy(readCache, inPtr+totalBytesWritten, nBytesToRead);
+            bytesWritten = theFifo.writeBytes((void*)readCache, nBytesToRead);
+            totalBytesWritten += bytesWritten;
+        }
+    };
+
+    auto conFunc = [&](){
+
+        int nBytesToRead = 0;
+        int nBytesRead = 0;
+        char consumeCache[qSize];
+        memset(consumeCache, 0, qSize);
+
+        while( nBytesRead < quoteSize)
+        {
+            unsigned int bytesRead = 0;
+            int bytesAvailToRead = 0;
+            int randBytesToRead = dist(mt);
+
+            bytesAvailToRead = theFifo.startRead();
+            if (bytesAvailToRead == 0) { continue; }
+            nBytesToRead = std::min({bytesAvailToRead, (quoteSize-nBytesRead), randBytesToRead});
+            bytesRead = theFifo.readBytes((void*)consumeCache, nBytesToRead);
+            memcpy(outPtr+nBytesRead, &consumeCache, bytesRead);
+            nBytesRead += bytesRead;
+        }
+    };
+
+    std::thread producer(prodFunc);
+    std::thread consumer(conFunc);
+
+    try{
+        // join the threads
+        producer.join();
+        consumer.join();
+    } catch(const std::system_error& e) {
+        std::cout << "Caught system_error with code " << e.code()
+                  << " meaning " << e.what() << '\n';
+    }
+
+    // test that the output matches input
+    // then print them and say something about the test
+
+    std::cout<<"Input quote: "<<inQuote<<std::endl;
+    std::cout<<"Output quote: "<<outQuote<<std::endl;
+
+    int result = strncmp(inQuote, outQuote, std::strlen(inQuote));
+    EXPECT_EQ(0, result);
+    std::cout<<"Test complete."<<std::endl;
+}
 
 int main(int argc, char **argv)
 {
