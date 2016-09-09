@@ -42,8 +42,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g3 -std=c++11 -Wall")
 if(UNIX)
 
     # this may belong somewhere else
-    set(STATIC_LINKER_FLAGS "-Wl,--export-all-symbols")
-
+    set(STATIC_LINKER_FLAGS "-Wl,--export-all-symbols -lpthread")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -pthread")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -pthread")
     if(APPLE)
         # enable the handy CFSTR() macro for initializers
         add_definitions("-fconstant-cfstrings")
@@ -57,4 +58,4 @@ endif()
 # not sure anything is here
 add_library(libBP INTERFACE )
 target_include_directories(libBP INTERFACE ${PROJECT_BINARY_DIR})
-#target_link_libraries(libBP INTERFACE libMW_midi)
+target_link_libraries(libBP INTERFACE ${CMAKE_THREAD_LIBS_INIT})

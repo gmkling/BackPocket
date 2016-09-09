@@ -16,30 +16,31 @@ set(TEST_BACKPOCKET_SRC_FILES
     ../Lf_Fifo/Lf_Fifo.hpp
     Test_Lf_Fifo.cpp
     Test_T_Fifo.cpp
-    #Test_T_FifoB.cpp
     )
 
 # Add sys specific tests as needed
 #if (UNIX)
-#  if(APPLE)
-#    set(TEST
-#        ${TEST_MIDI_SRC_FILES}
-#        test_MidiInterfaceOSX.cpp
-#        )
-#  endif()
+##  if(APPLE)
+##    set(TEST
+##        ${TEST_MIDI_SRC_FILES}
+##        test_MidiInterfaceOSX.cpp
+##        )
+##  endif()
+#    add_definitions("-pthread")
 #endif()
 
 add_executable(${PROJECT_TEST_NAME} ${TEST_BACKPOCKET_SRC_FILES})
 
 # Get gtest cooking
 add_dependencies(${PROJECT_TEST_NAME} googletest)
-add_definitions("-std=c++11")
+add_definitions("-std=c++11 -pthread")
 message("Gtest binary path: ${GTEST_LIBS_DIR}")
 
 if(NOT WIN32)
     target_link_libraries(${PROJECT_TEST_NAME}
         ${GTEST_LIBS_DIR}/libgtest.a
         ${GTEST_LIBS_DIR}/libgtest_main.a
+        ${CMAKE_THREAD_LIBS_INIT}
         )
 else()
     target_link_libraries(${PROJECT_TEST_NAME}
