@@ -77,8 +77,6 @@ public:
         }
     }
     
-    
-    
 private:
     unsigned int nextIndex(unsigned int index)
     {

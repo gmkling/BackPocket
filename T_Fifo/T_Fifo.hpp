@@ -1,6 +1,8 @@
 #ifndef T_FIFO_HPP
 #define T_FIFO_HPP
 // Single reader, single writer data queue. Lock-free and atomic-free
+// Copyright © 2016 Garry Kling, All Rights Reserved
+
 #include <cstring>
 
 class T_Fifo

@@ -33,6 +33,7 @@ add_subdirectory(${EXT_PROJECTS_DIR}/gtest)
 add_subdirectory(tests)
 add_subdirectory(T_Fifo)
 add_subdirectory(Lf_Fifo)
+add_subdirectory(Graphs)
 
 # some global compile flags
 
