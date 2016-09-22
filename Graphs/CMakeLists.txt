@@ -7,6 +7,7 @@ set(GRAPH_TARGET gmk_midi)
 
 
 set(graph_source
+    Graph_Common.hpp
     Node.hpp
     Node.cpp
     Edge.hpp

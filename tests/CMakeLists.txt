@@ -14,8 +14,12 @@ Message("Gtest include: ${GTEST_INCLUDE_DIRS}")
 set(TEST_BACKPOCKET_SRC_FILES
     ../T_Fifo/T_Fifo.hpp
     ../Lf_Fifo/Lf_Fifo.hpp
+    Test_Lf_Fifo.hpp
     Test_Lf_Fifo.cpp
+    Test_T_Fifo.hpp
     Test_T_Fifo.cpp
+    Test_NodesEdges.hpp
+    Test_NodesEdges.cpp
     )
 
 # Add sys specific tests as needed
