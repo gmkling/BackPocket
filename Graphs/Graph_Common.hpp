@@ -12,4 +12,9 @@
 #include "Graph.hpp"
 #include "Engine.hpp"
 
+// types
+
+typedef float float32;
+typedef double float64;
+
 #endif /* _GRAPH_COMMON_ */

@@ -100,4 +100,3 @@ private:
    }
 };
 #endif // T_FIFO_HPP
-
