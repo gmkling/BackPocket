@@ -43,7 +43,7 @@ public:
 
         for (int i=0; i<nBytesToWrite; i++)
         {
-           *(qBuf+index) = *(((char*)bytes)+i);  // ********** Will casting to a char * munge the incoming data?
+           *(qBuf+index) = *(((char*)bytes)+i);  
            index = nextIndex(index);
         }
         writeHead = index;
