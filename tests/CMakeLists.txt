@@ -9,13 +9,16 @@ set(PROJECT_TEST_NAME test_BackPocket)
 include_directories( ${GTEST_INCLUDE_DIRS}
                      ${CMAKE_SOURCE_DIR}/Lf_Fifo/
                      ${CMAKE_SOURCE_DIR}/T_Fifo/
+                     ${CMAKE_SOURCE_DIR}/Data_Fifo/
                    )
 Message("Gtest include: ${GTEST_INCLUDE_DIRS}")
 set(TEST_BACKPOCKET_SRC_FILES
     ../T_Fifo/T_Fifo.hpp
     ../Lf_Fifo/Lf_Fifo.hpp
-    Test_Lf_Fifo.cpp
+    ../Data_Fifo/Data_Fifo.hpp
+    #Test_Lf_Fifo.cpp
     Test_T_Fifo.cpp
+    Test_Data_Fifo.cpp
     )
 
 # Add sys specific tests as needed

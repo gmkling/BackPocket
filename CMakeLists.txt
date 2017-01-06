@@ -34,6 +34,7 @@ add_subdirectory(tests)
 add_subdirectory(T_Fifo)
 add_subdirectory(Lf_Fifo)
 add_subdirectory(Graphs)
+add_subdirectory(Data_Fifo)
 
 # some global compile flags
 
@@ -56,7 +57,7 @@ endif()
 # Build libraries
 #*********************
 # get all of our sub-libaries together
-# not sure anything is here
+
 add_library(libBP INTERFACE )
 target_include_directories(libBP INTERFACE ${PROJECT_BINARY_DIR})
 target_link_libraries(libBP INTERFACE ${CMAKE_THREAD_LIBS_INIT})
