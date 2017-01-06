@@ -107,7 +107,7 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
 
 }
 
-/* TEST(Data_FifoTest, testData_Fifo_roughly)
+TEST(Data_FifoTest, testData_Fifo_roughly)
 {
     // test single-producer, single consumer
     // just going to fire off two threads
@@ -127,50 +127,64 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
     // random numbers
     std::random_device rd;
     std::mt19937 mt(rd());
-    std::uniform_int_distribution<int> dist(1, qSize-1);
+    std::uniform_int_distribution<unsigned int> dist(1, qSize-1);
 
-    auto writer = [&](){
-
-        int nBytesToRead = 0;
-        int totalBytesWritten = 0;
-        char readCache[qSize];
-        memset(readCache, 0, qSize);
-
+   
+        auto writer = [&](){
+        
+        int nBytesToWrite = 0;
+        unsigned int totalBytesWritten = 0;
+        
         while( totalBytesWritten < quoteSize)
         {
-            int bytesWritten = 0;
-            int bytesAvailToWrite = 0;
-            int randBytesToWrite = dist(mt);
+            unsigned int bytesAvailToWrite = 16;
+            char * writePtr = nullptr;
+            unsigned int randBytesToWrite = 5; //dist(mt);
+            bytesAvailToWrite = std::min(bytesAvailToWrite, randBytesToWrite);
 
-            bytesAvailToWrite = theFifo.startWrite();
+            writePtr = (char *)theFifo.startWrite(bytesAvailToWrite);
             if (bytesAvailToWrite <= 0) { continue; }
-            // minimum of what can be written and what is left
-            nBytesToRead = std::min({bytesAvailToWrite, quoteSize-totalBytesWritten, randBytesToWrite});
-            memcpy(readCache, inPtr+totalBytesWritten, nBytesToRead);
-            bytesWritten = theFifo.writeBytes((void*)readCache, nBytesToRead);
-            totalBytesWritten += bytesWritten;
+            nBytesToWrite = std::min(bytesAvailToWrite, quoteSize-totalBytesWritten);
+            memcpy(writePtr, inPtr+totalBytesWritten, nBytesToWrite);
+            for (int i = 0; i < nBytesToWrite; ++i)
+            {
+                *(writePtr+i) = *(inPtr+(totalBytesWritten+i));
+            }
+
+            theFifo.finishWrite(nBytesToWrite);
+            totalBytesWritten += nBytesToWrite;
+            
         }
     };
 
-    auto reader = [&](){
 
+    
+    auto reader = [&](){
+           
         int nBytesToRead = 0;
-        int TotalBytesRead = 0;
-        char consumeCache[qSize];
-        memset(consumeCache, 0, qSize);
+        unsigned int TotalBytesRead = 0; 
 
         while( TotalBytesRead < quoteSize)
         {
-            unsigned int bytesRead = 0;
-            int bytesAvailToRead = 0;
-            int randBytesToRead = dist(mt);
+            unsigned int bytesAvailToRead = 16;
+            char * readPtr = nullptr;
+            unsigned int offset = 0;
+            unsigned int randBytesToRead = dist(mt);
+            bytesAvailToRead = std::min(bytesAvailToRead, randBytesToRead);
 
-            bytesAvailToRead = theFifo.startRead();
-            if (bytesAvailToRead == 0) { continue; }
-            nBytesToRead = std::min({bytesAvailToRead, (quoteSize-TotalBytesRead), randBytesToRead});
-            bytesRead = theFifo.readBytes((void*)consumeCache, nBytesToRead);
-            memcpy(outPtr+TotalBytesRead, &consumeCache, bytesRead);
-            TotalBytesRead += bytesRead;
+            
+            readPtr = (char *)theFifo.startRead(bytesAvailToRead);
+            if (bytesAvailToRead <= 0) { continue; }
+            nBytesToRead = std::min(bytesAvailToRead, (quoteSize-TotalBytesRead));
+
+            for (int i = 0; i < nBytesToRead; ++i)
+            {
+                 offset = TotalBytesRead+i;
+                 *(outQuote+offset) = *(readPtr+i); 
+            }
+
+            theFifo.finishRead(nBytesToRead);
+            TotalBytesRead += nBytesToRead;
         }
     };
 
@@ -197,11 +211,11 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
     std::cout<<"Test complete."<<std::endl;
 }
 
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
-*/
+// int main(int argc, char **argv)
+// {
+//     ::testing::InitGoogleTest(&argc, argv);
+//     return RUN_ALL_TESTS();
+// }
+
 
 
