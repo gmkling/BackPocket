@@ -28,7 +28,7 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
     int qSize = 8;
     Data_Fifo theFifo(qSize);
     unsigned int quoteSize = std::strlen(inQuote);
-    memset(outQuote, 0, quoteSize);
+    memset(outQuote, 'F', quoteSize);
     const char * inPtr = &inQuote[0];
     char * outPtr = &outQuote[0];
     std::cout<<"Quote Size: "<<quoteSize<<std::endl;
@@ -45,7 +45,7 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
             writePtr = (char *)theFifo.startWrite(bytesAvailToWrite);
             if (bytesAvailToWrite <= 0) { continue; }
             nBytesToWrite = std::min(bytesAvailToWrite, quoteSize-totalBytesWritten);
-            memcpy(writePtr, inPtr+totalBytesWritten, nBytesToWrite);
+            //memcpy(writePtr, inPtr+totalBytesWritten, nBytesToWrite);
             for (int i = 0; i < nBytesToWrite; ++i)
             {
                 *(writePtr+i) = *(inPtr+(totalBytesWritten+i));
@@ -118,9 +118,9 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
     // when they are done, outQuote should match inQuote
 
     int qSize = 16;
-    Data_Fifo theFifo(qSize);
+    Data_Fifo theFifo_2(qSize);
     int quoteSize = std::strlen(inQuote);
-    memset(outQuote, 0, quoteSize);
+    memset(outQuote, '0', quoteSize);
     const char * inPtr = &inQuote[0];
     char * outPtr = &outQuote[0];
 
@@ -130,7 +130,7 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
     std::uniform_int_distribution<unsigned int> dist(1, qSize-1);
 
    
-        auto writer = [&](){
+    auto writer = [&](){
         
         int nBytesToWrite = 0;
         unsigned int totalBytesWritten = 0;
@@ -139,26 +139,30 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
         {
             unsigned int bytesAvailToWrite = 16;
             char * writePtr = nullptr;
-            unsigned int randBytesToWrite = 5; //dist(mt);
-            bytesAvailToWrite = std::min(bytesAvailToWrite, randBytesToWrite);
+            unsigned int randBytesToWrite = dist(mt);
+           // bytesAvailToWrite = std::min(bytesAvailToWrite, randBytesToWrite);
 
-            writePtr = (char *)theFifo.startWrite(bytesAvailToWrite);
-            if (bytesAvailToWrite <= 0) { continue; }
-            nBytesToWrite = std::min(bytesAvailToWrite, quoteSize-totalBytesWritten);
-            memcpy(writePtr, inPtr+totalBytesWritten, nBytesToWrite);
+            writePtr = (char *)theFifo_2.startWrite(bytesAvailToWrite);
+            if (bytesAvailToWrite <= 0) 
+                { 
+                    //std::cout<<"Spin write"<<std::endl;
+                    continue; 
+                }
+            nBytesToWrite = std::min({bytesAvailToWrite, randBytesToWrite, quoteSize-totalBytesWritten});
+            //memcpy(writePtr, inPtr+totalBytesWritten, nBytesToWrite);
             for (int i = 0; i < nBytesToWrite; ++i)
             {
-                *(writePtr+i) = *(inPtr+(totalBytesWritten+i));
+              *(writePtr+i) = *(inPtr+(totalBytesWritten+i));
+              //std::cout<<*(writePtr+i);
             }
 
-            theFifo.finishWrite(nBytesToWrite);
+            theFifo_2.finishWrite(nBytesToWrite);
             totalBytesWritten += nBytesToWrite;
             
         }
     };
 
 
-    
     auto reader = [&](){
            
         int nBytesToRead = 0;
@@ -170,22 +174,23 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
             char * readPtr = nullptr;
             unsigned int offset = 0;
             unsigned int randBytesToRead = dist(mt);
-            bytesAvailToRead = std::min(bytesAvailToRead, randBytesToRead);
 
-            
-            readPtr = (char *)theFifo.startRead(bytesAvailToRead);
+            readPtr = (char *)theFifo_2.startRead(bytesAvailToRead);
             if (bytesAvailToRead <= 0) { continue; }
-            nBytesToRead = std::min(bytesAvailToRead, (quoteSize-TotalBytesRead));
+            nBytesToRead = std::min({bytesAvailToRead, randBytesToRead, quoteSize-TotalBytesRead});
+            // nBytesToRead = std::min(bytesAvailToRead, (quoteSize-TotalBytesRead));
 
             for (int i = 0; i < nBytesToRead; ++i)
             {
-                 offset = TotalBytesRead+i;
-                 *(outQuote+offset) = *(readPtr+i); 
+                 *(outQuote+TotalBytesRead+i) = *(readPtr+i);
             }
 
-            theFifo.finishRead(nBytesToRead);
+            theFifo_2.finishRead(nBytesToRead);
             TotalBytesRead += nBytesToRead;
+            //std::cout<<"Read this time: "<<nBytesToRead<<std::endl;
+            //std::cout<<"Total read: "<<TotalBytesRead<<std::endl;
         }
+        
     };
 
     std::thread producer(writer);
