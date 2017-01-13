@@ -39,10 +39,10 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
         
         while( totalBytesWritten < quoteSize)
         {
-            unsigned int bytesAvailToWrite = 1;
+            unsigned int bytesAvailToWrite = 2;
             char * writePtr = nullptr;
             
-            writePtr = (char *)theFifo.startWrite(bytesAvailToWrite);
+            writePtr = (char *)theFifo.openWrite(bytesAvailToWrite);
             if (bytesAvailToWrite <= 0) { continue; }
             nBytesToWrite = std::min(bytesAvailToWrite, quoteSize-totalBytesWritten);
             //memcpy(writePtr, inPtr+totalBytesWritten, nBytesToWrite);
@@ -51,7 +51,7 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
                 *(writePtr+i) = *(inPtr+(totalBytesWritten+i));
             }
 
-            theFifo.finishWrite(nBytesToWrite);
+            theFifo.closeWrite(nBytesToWrite);
             totalBytesWritten += nBytesToWrite;
             
         }
@@ -64,11 +64,11 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
 
         while( TotalBytesRead < quoteSize)
         {
-            unsigned int bytesAvailToRead = 1;
+            unsigned int bytesAvailToRead = 2;
             char * readPtr = nullptr;
             unsigned int offset = 0;
             
-            readPtr = (char *)theFifo.startRead(bytesAvailToRead);
+            readPtr = (char *)theFifo.openRead(bytesAvailToRead);
             if (bytesAvailToRead <= 0) { continue; }
             nBytesToRead = std::min(bytesAvailToRead, (quoteSize-TotalBytesRead));
 
@@ -78,7 +78,7 @@ TEST(Data_FifoTest, testData_Fifo_nicely)
                  *(outQuote+offset) = *(readPtr+i); 
             }
 
-            theFifo.finishRead(nBytesToRead);
+            theFifo.closeRead(nBytesToRead);
             TotalBytesRead += nBytesToRead;
         }
     };
@@ -142,7 +142,7 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
             unsigned int randBytesToWrite = dist(mt);
            // bytesAvailToWrite = std::min(bytesAvailToWrite, randBytesToWrite);
 
-            writePtr = (char *)theFifo_2.startWrite(bytesAvailToWrite);
+            writePtr = (char *)theFifo_2.openWrite(bytesAvailToWrite);
             if (bytesAvailToWrite <= 0) 
                 { 
                     //std::cout<<"Spin write"<<std::endl;
@@ -156,7 +156,7 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
               //std::cout<<*(writePtr+i);
             }
 
-            theFifo_2.finishWrite(nBytesToWrite);
+            theFifo_2.closeWrite(nBytesToWrite);
             totalBytesWritten += nBytesToWrite;
             
         }
@@ -175,7 +175,7 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
             unsigned int offset = 0;
             unsigned int randBytesToRead = dist(mt);
 
-            readPtr = (char *)theFifo_2.startRead(bytesAvailToRead);
+            readPtr = (char *)theFifo_2.openRead(bytesAvailToRead);
             if (bytesAvailToRead <= 0) { continue; }
             nBytesToRead = std::min({bytesAvailToRead, randBytesToRead, quoteSize-TotalBytesRead});
             // nBytesToRead = std::min(bytesAvailToRead, (quoteSize-TotalBytesRead));
@@ -185,7 +185,7 @@ TEST(Data_FifoTest, testData_Fifo_roughly)
                  *(outQuote+TotalBytesRead+i) = *(readPtr+i);
             }
 
-            theFifo_2.finishRead(nBytesToRead);
+            theFifo_2.closeRead(nBytesToRead);
             TotalBytesRead += nBytesToRead;
             //std::cout<<"Read this time: "<<nBytesToRead<<std::endl;
             //std::cout<<"Total read: "<<TotalBytesRead<<std::endl;

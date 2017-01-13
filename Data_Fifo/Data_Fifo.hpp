@@ -8,20 +8,14 @@
 // Data_Fifo clients ask for a certain amount of space to read or write
 // and promise to respect the returned value
 
-
-
-// A try with a slightly simpler interface
-
 class Data_Fifo
 {
+  public:
 
-public:
-
-    Data_Fifo(int size) : kNBytes(size), readHead(0), writeHead(1)
+    Data_Fifo(int size) : kNBytes(size), byteMask(size-1), readHead(0), writeHead(0)
     {
         int power;
 
-        // check if kNBytes is a power of two and juke it if not
         if (!(size & (size-1))==0) // if size is not a power of 2
         {
           for(power=1; 1<<power < size; power++){}
@@ -31,114 +25,251 @@ public:
 
         kNBytes = size;
         byteMask = size-1;
+
+        // Gurus hate him!
         qBuf = new char[kNBytes];
         memset(qBuf, '0', kNBytes);
     }
 
     ~Data_Fifo() { delete[] qBuf; }
 
-    void * startWrite(unsigned int &nBytesReq)
+
+
+    void * openWrite(unsigned int &nBytesReq)
     {
-      unsigned int readLoc, writeLoc, writeSpace;
+      unsigned int wPtr;
+      // get space avail, check split
+      unsigned int wAvail = getWriteSpace();
+      if ( nBytesReq > wAvail) nBytesReq = wAvail;
+      if (nBytesReq<=0) return nullptr;
 
-      readLoc = readHead;
-      writeLoc = writeHead;
+      wPtr = writeHead & byteMask;
 
-      // check wrap
-      if ( (writeLoc==byteMask) && (readLoc>0) ) // to wrap
+      if ( (wPtr + nBytesReq) > kNBytes ) // if going that far is an overrun, split
       {
-        writeHead = writeLoc = 0;
-        //return;
-      } else if ( (writeLoc==byteMask) && (readLoc==0)) // or not to wrap
+        // just use the end portion
+        nBytesReq = kNBytes - wPtr;
+        return qBuf+wPtr;
+      } else // count is valid, return ptr
       {
-        writeHead = writeLoc = byteMask;
-        //return;
+        return qBuf+wPtr;
       }
-
-      if( writeLoc > readLoc)
-      {
-        writeSpace = kNBytes-writeLoc-1;
-      } else if (readLoc>writeLoc)
-      {
-        writeSpace = readLoc-writeLoc-1;
-      }
-
-      nBytesReq = std::min(writeSpace, nBytesReq);
-
-      return (qBuf+writeHead);
-    
-    }
-
-    void finishWrite(unsigned int nBytesWritten)
-    {
-      unsigned int writeLoc = writeHead;
-      unsigned int readLoc = readHead;
-
-      writeLoc = (writeLoc + nBytesWritten) & byteMask;
-
-    
-      writeHead = writeLoc;
-      return;
-    }
-
-    void * startRead(unsigned int &nBytesReq)
-    {
-      unsigned readLoc, writeLoc, readSpace;
-
-      readLoc = readHead;
-      writeLoc = writeHead;
-      readSpace = 0;
-
-      // wrapping
-      if( (readLoc==byteMask) && (writeLoc>0)) 
-      {
-        readHead = readLoc = 0;
-        //return;
-      } else if ( (readLoc == byteMask) && (writeLoc==0))
-      {
-        readHead = readLoc = byteMask;
-        //return;
-      }
-
-      
-      if (readLoc>writeLoc)
-      {
-        readSpace = kNBytes-readLoc-1;
-      } else if ( writeLoc > readLoc)
-      {
-        readSpace = writeLoc-readLoc-1;
-      } else if ( writeLoc==readLoc)
-      {
-        readSpace=0;
-      }
-
-      nBytesReq = std::min(readSpace, nBytesReq);
-
-      return (qBuf+readHead);
 
     }
 
-    void finishRead(unsigned int nBytesRead)
+    void closeWrite(unsigned int nBytesWritten)
     {
-      unsigned int readLoc = readHead;
-      unsigned int writeLoc = writeHead;
-
-      readLoc = readLoc + nBytesRead;
-    
-      
-      readHead = readLoc;
-      return;
+      unsigned int temp = (writeHead + nBytesWritten) & byteMask;
+      // update writeHead
+      writeHead = temp;
     }
 
-private:
+    void * openRead(unsigned int &nBytesReq)
+    {
+      unsigned int rPtr;
+      // get reads avail, check for split
+      unsigned int rAvail = getReadSpace();
+      if ( nBytesReq > rAvail) nBytesReq = rAvail;
+      if ( nBytesReq <=0) return nullptr;
+
+      rPtr = readHead & byteMask; // wrap and read
+
+      if ( (rPtr+nBytesReq) > kNBytes)
+      {
+        nBytesReq = kNBytes - rPtr;
+        return qBuf+rPtr;
+      } else // nothing to fix
+      {
+        return qBuf+rPtr;
+      }
+
+    } 
+
+    void closeRead(unsigned int nBytesRead)
+    {
+      unsigned int temp = ( readHead + nBytesRead ) & byteMask;
+      // update read head
+      readHead = temp;
+    }
+
+  private:
+
+   // returns number of bytes avail to read
+    unsigned int getReadSpace(void)
+    {
+      unsigned int rPtr, wPtr;
+      rPtr = readHead;
+      wPtr = writeHead;
+
+      if (wPtr>rPtr)
+      {
+        return wPtr - rPtr;
+      }
+
+      return (wPtr-rPtr + kNBytes) & byteMask; 
+    }
+
+    // returns number of bytes avail to be written
+    unsigned int getWriteSpace(void)
+    {
+      unsigned int rPtr, wPtr;
+      rPtr = readHead;
+      wPtr = writeHead;
+
+      if (wPtr>rPtr) 
+      {
+        return (( rPtr - wPtr + kNBytes ) & byteMask ) - 1;
+      } else if ( wPtr < rPtr)
+      {
+        return rPtr - wPtr - 1;
+      } else // w==r , empty
+      {
+        return kNBytes-1;
+      }
+    }
+
 
    char * qBuf;
    unsigned int kNBytes; // must be power of 2
-   int byteMask;
+   unsigned int byteMask;
    volatile unsigned int readHead, writeHead;
    
+
 };
+
+
+
 #endif // DATA_FIFO_HPP
+
+
+// A try with a slightly simpler interface
+
+// class Data_Fifo
+// {
+
+// public:
+
+//     Data_Fifo(int size) : kNBytes(size), byteMask(size-1), wPass(0), rPass(0), readHead(0), writeHead(0)
+//     {
+//         int power;
+
+//         // check if kNBytes is a power of two and juke it if not
+//         if (!(size & (size-1))==0) // if size is not a power of 2
+//         {
+//           for(power=1; 1<<power < size; power++){}
+//           //
+//           size = 1<<power;
+//         }
+
+//         kNBytes = size;
+//         byteMask = size-1;
+//         qBuf = new char[kNBytes];
+//         memset(qBuf, '0', kNBytes);
+//     }
+
+//     ~Data_Fifo() { delete[] qBuf; }
+
+//     void * startWrite(unsigned int &nBytesReq)
+//     {
+//       unsigned int readLoc, writeLoc, writeSpace;
+
+//       readLoc = readHead;
+//       writeLoc = writeHead;
+
+//       if( writeLoc > readLoc)
+//       {
+//         writeSpace = kNBytes-writeLoc-1;
+//       } else if (readLoc>writeLoc)
+//       {
+//         writeSpace = readLoc-writeLoc;
+//       } else if (readLoc==writeLoc)
+//       {
+//         if(wPass<=rPass) 
+//         { 
+//             writeSpace = kNBytes-writeLoc-1;
+//         } else if (wPass>rPass) // wait for read
+//         {
+//             writeSpace = 0;
+//         }
+//       }
+
+//       nBytesReq = std::min(writeSpace, nBytesReq);
+    
+//       if (nBytesReq==0) { return nullptr; }
+
+//       return (qBuf+writeHead);
+    
+//     }
+
+//     void finishWrite(unsigned int nBytesWritten)
+//     {
+//       unsigned int writeLoc = writeHead;
+      
+//       writeLoc = writeLoc + nBytesWritten;
+
+//       if (writeLoc>=byteMask)
+//       {
+//         writeLoc = writeLoc & byteMask;
+//         wPass++;
+//       }
+
+//       writeHead = writeLoc;
+//       return;
+//     }
+
+//     void * startRead(unsigned int &nBytesReq)
+//     {
+//       unsigned readLoc, writeLoc, readSpace;
+
+//       readLoc = readHead;
+//       writeLoc = writeHead;
+//       readSpace = 0;
+
+//       if (readLoc>writeLoc)
+//       {
+//         readSpace = kNBytes-readLoc;
+//       } else if ( writeLoc > readLoc)
+//       {
+//         readSpace = writeLoc-readLoc;
+//       } else if ( writeLoc==readLoc)
+//       {
+//         if(rPass>=wPass)
+//         {
+//           readSpace = 0;
+//         } else if (rPass<wPass) { readSpace = kNBytes-readLoc; }
+//       }
+
+//       nBytesReq = std::min(readSpace, nBytesReq);
+//       if (nBytesReq==0) { return nullptr; }
+//       return (qBuf+readHead);
+
+//     }
+
+//     void finishRead(unsigned int nBytesRead)
+//     {
+//       unsigned int readLoc = readHead;
+//       unsigned int writeLoc = writeHead;
+
+//       readLoc = readLoc + nBytesRead;
+      
+//       if( readLoc >= byteMask )
+//       {
+//         readLoc = readLoc & byteMask;
+//         rPass++;
+//       }
+      
+//       readHead = readLoc;
+//       return;
+//     }
+
+// private:
+
+//    char * qBuf;
+//    unsigned int kNBytes; // must be power of 2
+//    int byteMask, wPass, rPass;
+//    volatile unsigned int readHead, writeHead;
+   
+// };
 
 
 // class Data_Fifo
