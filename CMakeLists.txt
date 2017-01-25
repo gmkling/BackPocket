@@ -7,6 +7,10 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+# Cmake module path
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules
+                          ${CMAKE_MODULE_PATH})
+
 # gtest needs pthreads
 find_package(Threads REQUIRED)
 
@@ -60,4 +64,4 @@ endif()
 
 add_library(libBP INTERFACE )
 target_include_directories(libBP INTERFACE ${PROJECT_BINARY_DIR})
-target_link_libraries(libBP INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(libBP INTERFACE ${CMAKE_THREAD_LIBS_INIT} ${JACK_LIBRARIES})

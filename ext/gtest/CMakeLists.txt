@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 project(gtest_builder C CXX)
 include(ExternalProject)
 
+# grab gtest if needed
 ExternalProject_Add(googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG    master

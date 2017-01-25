@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 
-set(GRAPH_TARGET gmk_midi)
-
-# midi module will need some conditional/cross platform compilation
-# just doing with mac now
-
+set(GRAPH_TARGET BP_graphs)
 
 set(graph_source
     Node.hpp
