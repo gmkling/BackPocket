@@ -13,7 +13,7 @@ class AudioDriver
 {
 	AudioDriver(SynthContext *synth): synthCon(synth)
 	{};
-	
+
 	~AudioDriver() {};
 
 	// interface
@@ -38,13 +38,14 @@ class AudioDriver_PA : public AudioDriver
 
 	int PortAudioCallback( const void *input, void *output,
 			unsigned long frameCount, const PaStreamCallbackTimeInfo* timeInfo,
-			PaStreamCallbackFlags statusFlags, void * userData );
+			PaStreamCallbackFlags statusFlags);
 
 	// local data
 
 	PaStream *theStream;
 	int nInputChan, nOutputChan;
 };
+
 
 
 #endif /* AUDIO_DRIVER_H */
