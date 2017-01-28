@@ -23,6 +23,7 @@
 
 class SynthContext; 
 
+
 typedef void (*GraphFunc)(SynthContext*, int);
 
 class SynthContext
@@ -39,21 +40,10 @@ public:
 		// flush FIFOS
 	};
 
-	void addGraph(GraphFunc inFunc)
-	{
-		theGraph = inFunc;
-	}
-
-	void start()
-	{
-		// check we are ready to go first?
-		theAudioDriver->startAudio();
-	}
-
-	void stop()
-	{
-		theAudioDriver->stopAudio();
-	}
+	void addGraph(GraphFunc inFunc);
+	void start();
+	void stop();
+	
 
 	// Audio settings
 
@@ -65,7 +55,7 @@ public:
 
 
 	// audio driver ptr
-	AudioDriver *theAudioDriver;
+	class AudioDriver *theAudioDriver;
 
 	// comm buffers
 	Data_Fifo *driverMsgToEngine;
@@ -81,28 +71,5 @@ public:
 	float outputBuffers[NCHAN*BLOCK_SIZE];
 };
 
-
-
-
-// factory function for Synths. 
-// This will later take an options struct to init the Synth.
-
-SynthContext* NewSynth()
-{
-	SynthContext *synthTemp = new SynthContext();
-	
-	// this should later be based on the size of the messages being passed
-	Data_Fifo msgFifo(256);
-
-	synthTemp->driverMsgToEngine = &msgFifo;
-
-	synthTemp->theAudioDriver = NewAudioDriver(synthTemp);
-
-	// init the bufs
-	memset(synthTemp->inputBuffers, 0, NCHAN*BLOCK_SIZE);
-	memset(synthTemp->outputBuffers, 0, NCHAN*BLOCK_SIZE);
-
-	return synthTemp;
-}
 
 #endif /* SYNTH_CONTEXT_H */

@@ -50,7 +50,7 @@ include_directories( "${PROJECT_SOURCE_DIR}/Audio"
                      "${PROJECT_SOURCE_DIR}/Data_Fifo" 
                     )
 
-
+set(SOURCE main.cpp "${PROJECT_SOURCE_DIR}/Audio/AudioDriver.cpp")
 
 #***************************
 # some global compile flags
@@ -84,4 +84,5 @@ endif()
 # Build the thing
 #*********************
 
-add_executable(${BIN_NAME} main.cpp "${PROJECT_SOURCE_DIR}/Audio/AudioDriver.cpp")
+add_executable(${BIN_NAME} ${SOURCE} )
+target_link_libraries(${BIN_NAME} ${COMP_NAME})

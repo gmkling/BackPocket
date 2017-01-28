@@ -2,7 +2,9 @@
 // Main thread for my audio engine
 // (c) 2017 Garry Kling
 
+#include "AudioDriver.hpp"
 #include "SynthContext.hpp"
+
 #include "Data_Fifo.hpp"
 
 #include <chrono>

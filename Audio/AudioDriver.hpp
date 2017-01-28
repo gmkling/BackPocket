@@ -47,6 +47,7 @@ public:
 	int nInputChan, nOutputChan;
 };
 
-AudioDriver* NewAudioDriver(SynthContext *synthCon);
+extern AudioDriver* NewAudioDriver(SynthContext *synthCon);
+extern SynthContext* NewSynth();
 
 #endif /* AUDIO_DRIVER_H */
