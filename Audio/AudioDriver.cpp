@@ -113,6 +113,7 @@ int AudioDriver_PA::PortAudioCallback(const void *input, void *output,
 	}
 
 	// calculate graph
+	synthCon->theGraph(synthCon, samplesPerBlock);
 
 	// copy output to output
 	for( int i = 0; i<synthCon->nOutputChan; i++)
@@ -142,4 +143,11 @@ static int paCallbackFunc(const void *input, void *output,
 void paPrintError(PaError theErr)
 {
 	std::cout<<"AudioDriver_PA: PortAudio encountered error: "<<Pa_GetErrorText( theErr )<<std::endl;
+}
+
+AudioDriver* NewAudioDriver(SynthContext *synthCon)
+{
+	AudioDriver_PA paDriver(synthCon);
+
+	return paDriver; 
 }

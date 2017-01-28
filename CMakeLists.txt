@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.6)
-set(LIB_NAME libBP)
-project(${LIB_NAME} C CXX)
+
+set(BIN_NAME KlingSynth)
+project(${BIN_NAME} C CXX)
+
+#set(LIB_NAME libBP)
+#project(${LIB_NAME} C CXX)
 
 # Set the build type if it isn't already
 if(NOT CMAKE_BUILD_TYPE)
@@ -26,24 +30,34 @@ configure_file(
     "${PROJECT_BINARY_DIR}/libBPConfig.h"
     )
 
-# directories for ext deps and for client includes
-# Q: How does LIB_INCLUDES differ/overlap with INTERFACE includes in target_include_directories below?
-# A: subdirectories have their own private includes, LIB_INCLUDES is for public interfaces only(?)
 set(LIB_INCLUDES ${PROJECT_SOURCE_DIR}/include)
 set(EXT_PROJECTS_DIR ${PROJECT_SOURCE_DIR}/ext)
 
 # modules
 add_subdirectory(${EXT_PROJECTS_DIR}/gtest)
-add_subdirectory(tests)
-add_subdirectory(T_Fifo)
-add_subdirectory(Lf_Fifo)
-add_subdirectory(Graphs)
+#add_subdirectory(tests)
+add_subdirectory(Audio)
+#add_subdirectory(T_Fifo)
+#add_subdirectory(Lf_Fifo)
+#add_subdirectory(Graphs)
 add_subdirectory(Data_Fifo)
 
-# some global compile flags
+#***************************
+# Include Directories
+#***************************
 
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++11 -Wall")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  -std=c++11 -Wall")
+include_directories( "${PROJECT_SOURCE_DIR}/Audio" 
+                     "${PROJECT_SOURCE_DIR}/Data_Fifo" 
+                    )
+
+
+
+#***************************
+# some global compile flags
+#***************************
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -std=c++17 -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}  -std=c++17 -Wall")
 
 if(UNIX)
 
@@ -62,6 +76,12 @@ endif()
 #*********************
 # get all of our sub-libaries together
 
-add_library(libBP INTERFACE )
-target_include_directories(libBP INTERFACE ${PROJECT_BINARY_DIR})
-target_link_libraries(libBP INTERFACE ${CMAKE_THREAD_LIBS_INIT} ${JACK_LIBRARIES})
+#add_library(libBP INTERFACE )
+#target_include_directories(libBP INTERFACE ${PROJECT_BINARY_DIR})
+#target_link_libraries(libBP INTERFACE ${CMAKE_THREAD_LIBS_INIT} ${JACK_LIBRARIES})
+
+#*********************
+# Build the thing
+#*********************
+
+add_executable(${BIN_NAME} main.cpp "${PROJECT_SOURCE_DIR}/Audio/AudioDriver.cpp")

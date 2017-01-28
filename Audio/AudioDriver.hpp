@@ -11,7 +11,8 @@
 
 class AudioDriver
 {
-	AudioDriver(SynthContext *synth): synthCon(synth)
+public: 
+	AudioDriver(class SynthContext *synth): synthCon(synth)
 	{};
 
 	~AudioDriver() {};
@@ -22,11 +23,11 @@ class AudioDriver
 	virtual bool stopAudio() = 0;
 
 	SynthContext *synthCon;
-}
+};
 
 class AudioDriver_PA : public AudioDriver
 {
-
+public: 
 	AudioDriver_PA(SynthContext *synth);
 	~AudioDriver_PA();
 	// Driver interface
@@ -46,6 +47,6 @@ class AudioDriver_PA : public AudioDriver
 	int nInputChan, nOutputChan;
 };
 
-
+AudioDriver* NewAudioDriver(SynthContext *synthCon);
 
 #endif /* AUDIO_DRIVER_H */
