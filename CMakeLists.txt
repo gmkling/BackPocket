@@ -18,6 +18,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules
 # gtest needs pthreads
 find_package(Threads REQUIRED)
 
+# needs portaudio
+find_package(Portaudio)
+    if(NOT PORTAUDIO_FOUND)
+      message(FATAL_ERROR "Portaudio files not found")
+    endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 # versioning
@@ -85,4 +91,4 @@ endif()
 #*********************
 
 add_executable(${BIN_NAME} ${SOURCE} )
-target_link_libraries(${BIN_NAME} ${COMP_NAME})
+target_link_libraries(${BIN_NAME} ${COMP_NAME} ${PORTAUDIO_LIBRARIES})

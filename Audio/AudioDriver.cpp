@@ -7,6 +7,29 @@
 
 
 //////////////////////////////////////////////
+// utils
+//////////////////////////////////////////////
+
+void paPrintError(PaError theErr, const char* funcDesc)
+{
+	std::cout<<"AudioDriver_PA::"<<funcDesc<<": PortAudio encountered error: "<<Pa_GetErrorText( theErr )<<std::endl;
+}
+
+AudioDriver* NewAudioDriver(SynthContext *synthCon)
+{
+	return new AudioDriver_PA(synthCon); 
+}
+
+static int paCallbackFunc(const void *input, void *output,
+			unsigned long frameCount, const PaStreamCallbackTimeInfo* timeInfo,
+			PaStreamCallbackFlags statusFlags, void * userData)
+{
+	AudioDriver_PA *driver = (AudioDriver_PA*)userData;
+
+	return driver->PortAudioCallback( input, output, frameCount, timeInfo, statusFlags );
+}
+
+//////////////////////////////////////////////
 
 AudioDriver_PA::AudioDriver_PA(SynthContext *synth): AudioDriver(synth), theStream(0), nInputChan(0), nOutputChan(0)
 {
@@ -14,7 +37,7 @@ AudioDriver_PA::AudioDriver_PA(SynthContext *synth): AudioDriver(synth), theStre
 
 	if (paErr!=paNoError) 
 	{
-		paPrintError(paErr);
+		paPrintError(paErr, "AudioDriver_PA");
 	}
 
 	// we don't terminate because we can get an error and still continue
@@ -31,7 +54,7 @@ AudioDriver_PA::~AudioDriver_PA()
 		theErr = Pa_CloseStream( theStream );
 		if( theErr != paNoError)
 		{
-			paPrintError( theErr );
+			paPrintError( theErr, "~AudioDriver_PA" );
 		}
 	}
 
@@ -46,13 +69,13 @@ bool AudioDriver_PA::setupAudio()
 
     // open a default stream
     theErr = Pa_OpenDefaultStream( &theStream, 
-    							synthCon->nInputChan, synthCon->nOutputChan, 
+    							0, 2, 
     							paFloat32 | paNonInterleaved, 
     							synthCon->sRate, synthCon->blockSize, 
     							paCallbackFunc, this );
     if( theErr != paNoError )
     {
-		paPrintError( theErr );
+		paPrintError( theErr, "setupAudio" );
     }
 
     return theErr == paNoError;
@@ -66,7 +89,7 @@ bool AudioDriver_PA::startAudio()
 
 	if( theErr != paNoError )
 	{
-		paPrintError(theErr);
+		paPrintError(theErr, "startAudio");
 	}
 
 	return theErr == paNoError;
@@ -80,7 +103,7 @@ bool AudioDriver_PA::stopAudio()
 
 	if( theErr != paNoError )
 	{
-		paPrintError(theErr);
+		paPrintError(theErr, "stopAudio");
 	}
 
 	return theErr == paNoError;
@@ -101,7 +124,7 @@ int AudioDriver_PA::PortAudioCallback(const void *input, void *output,
 	// process commands
 
 	// copy input to buffers
-	for( int i = 0; i<synthCon->nInputChan; i++)
+	for( int i = 0; i<synthCon->nChanIn; i++)
 	{
 		const float *inBuf = inputChBufs[i] + position;
 		float *sythInBufPtr = synthInBuf + i*samplesPerBlock;
@@ -116,9 +139,9 @@ int AudioDriver_PA::PortAudioCallback(const void *input, void *output,
 	synthCon->theGraph(synthCon, samplesPerBlock);
 
 	// copy output to output
-	for( int i = 0; i<synthCon->nOutputChan; i++)
+	for( int i = 0; i<synthCon->nChanOut; i++)
 	{
-		float *outBuf = outputBuffers[i] + position;
+		float *outBuf = outputChanBufs[i] + position;
 		float *synthOutBufPtr = synthOutBuf + i*samplesPerBlock;
 
 		for( int j =0; j<synthCon->blockSize; j++)
@@ -131,24 +154,8 @@ int AudioDriver_PA::PortAudioCallback(const void *input, void *output,
 }
 
 
-static int paCallbackFunc(const void *input, void *output,
-			unsigned long frameCount, const PaStreamCallbackTimeInfo* timeInfo,
-			PaStreamCallbackFlags statusFlags, void * userData)
-{
-	AudioDriver_PA *driver = (AudioDriver_PA*)userData;
 
-	return driver->PortAudioCallback( input, output, frameCount, timeInfo, statusFlags );
-}
-
-void paPrintError(PaError theErr)
-{
-	std::cout<<"AudioDriver_PA: PortAudio encountered error: "<<Pa_GetErrorText( theErr )<<std::endl;
-}
-
-AudioDriver* NewAudioDriver(SynthContext *synthCon)
-{
-	return new AudioDriver_PA(synthCon); 
-}
+//////////////////////////////////////////////////////////////////
 
 // factory function for Synths. 
 // This will later take an options struct to init the Synth.
