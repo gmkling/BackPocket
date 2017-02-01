@@ -31,7 +31,7 @@ static int paCallbackFunc(const void *input, void *output,
 
 //////////////////////////////////////////////
 
-AudioDriver_PA::AudioDriver_PA(SynthContext *synth): AudioDriver(synth), theStream(0), nInputChan(0), nOutputChan(0)
+AudioDriver_PA::AudioDriver_PA(SynthContext *synth): AudioDriver(synth), theStream(0)
 {
 	PaError paErr = Pa_Initialize();
 
@@ -69,8 +69,8 @@ bool AudioDriver_PA::setupAudio()
 
     // open a default stream
     theErr = Pa_OpenDefaultStream( &theStream, 
-    							0, 2, 
-    							paFloat32 | paNonInterleaved, 
+    							synthCon->nChanIn, synthCon->nChanOut, 
+    							paFloat32, 
     							synthCon->sRate, synthCon->blockSize, 
     							paCallbackFunc, this );
     if( theErr != paNoError )
@@ -155,46 +155,4 @@ int AudioDriver_PA::PortAudioCallback(const void *input, void *output,
 
 
 
-//////////////////////////////////////////////////////////////////
-
-// factory function for Synths. 
-// This will later take an options struct to init the Synth.
-
-SynthContext* NewSynth()
-{
-	SynthContext *synthTemp = new SynthContext();
-	
-	// this should later be based on the size of the messages being passed
-	Data_Fifo msgFifo(256);
-
-	synthTemp->driverMsgToEngine = &msgFifo;
-
-	synthTemp->theAudioDriver = NewAudioDriver(synthTemp);
-
-	// init the bufs
-	memset(synthTemp->inputBuffers, 0, NCHAN*BLOCK_SIZE);
-	memset(synthTemp->outputBuffers, 0, NCHAN*BLOCK_SIZE);
-
-	return synthTemp;
-}
-
-//////////////////////////////////
-// SynthContext
-//////////////////////////////////
-
-void SynthContext::addGraph(GraphFunc inFunc)
-{
-	theGraph = inFunc;
-}
-
-void SynthContext::start()
-{
-	// check we are ready to go first?
-	theAudioDriver->startAudio();
-}
-
-void SynthContext::stop()
-{
-	theAudioDriver->stopAudio();
-}
 
