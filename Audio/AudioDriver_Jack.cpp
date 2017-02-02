@@ -64,8 +64,15 @@ AudioDriver_Jack::AudioDriver_Jack(SynthContext *theSynth)
 	}
 
 	// delete port structures
+
+	delete [] inputPorts;
+	delete [] outputPorts;
+	delete [] inputBuffers;
+	delete [] outputBuffers;
 }
 
+// these methods are for when we actually configure the ports
+// for now we are just using stereo
 void AudioDriver_Jack::createInputPorts(jack_client_t *theClient, int nPorts)
 {
 	const char *fmt = "in_%d";
@@ -101,6 +108,21 @@ void AudioDriver_Jack::createOutputPorts(jack_client_t *theClient, int nPorts)
 		outputBuffers[i] = 0;
 	}
 }
+
+void AudioDriver_Jack::connectPorts(const char *src, const char *dest)
+{
+	int err = jack_connect(clientPtr, src, jack_port_name(dst));
+	
+	if ( err )
+	{
+		std::cout<<"Jack: Error connecting ports: "<<src<<" and "<<dest<<std::endl;
+		printJackErr(clientPtr->status, "connectPorts ");
+		return;
+	}
+	std::cout<<"Jack: Connected ports: "<<src<<" and "<<dest<<std::endl;
+
+}
+
 
 bool AudioDriver_Jack::setupAudio()
 {
@@ -138,9 +160,12 @@ bool AudioDriver_Jack::startAudio()
     jack_sRate = (double)jack_get_sample_rate(clientPtr);
     jack_bufSize = (int)jack_get_buffer_size(clientPtr);
 
+    synthCon->sRate = jack_sRate;
+    synthCon->blockSize = jack_bufSize;
+
     // create ports
-    createInputPorts(clientPtr, synthCon->nChanIn);
-    createOutputPorts(clientPtr, synthCon->nChanOut);
+    //createInputPorts(clientPtr, synthCon->nChanIn);
+    //createOutputPorts(clientPtr, synthCon->nChanOut);
 
     // activate jack
     int jackErr = jack_activate(clientPtr);
@@ -152,10 +177,15 @@ bool AudioDriver_Jack::startAudio()
     }
     
     // connect ports
+    const char **jackPortOut = jack_get_ports(clientPtr, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
+    const char **jackPortIn = jack_get_ports(clientPtr, NULL, NULL, JackPortIsPhysical|JackPortIsOutput);
 
-    
     // input 
-    // output
+    connectPorts(jackPortOut[0], outputPorts[0]);
+    connectPorts(jackPortIn[0], inputPorts[0]);
+
+    free(jackPortIn);
+    free(jackPortOut);
 
 }
 

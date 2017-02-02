@@ -18,7 +18,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules
 # gtest needs pthreads
 find_package(Threads REQUIRED)
 
-# needs portaudio
+# audio options - choose appropriate pkg for platform
+# prefer portaudio, jack in that order
+
 find_package(Portaudio)
     if(NOT PORTAUDIO_FOUND)
       message(FATAL_ERROR "Portaudio files not found")
