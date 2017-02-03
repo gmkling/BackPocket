@@ -32,7 +32,9 @@ include_directories( "${PROJECT_SOURCE_DIR}/Audio"
 
 set( SOURCE
         ${SOURCE} 
-        ${CMAKE_CURRENT_SOURCE_DIR}/Audio/AudioDriver.cpp
+        #${CMAKE_CURRENT_SOURCE_DIR}/Audio/AudioDriver_PA.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Audio/AudioDriver_Jack.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Audio/SynthContext.cpp
         PARENT_SCOPE
         )
 

@@ -21,10 +21,25 @@ find_package(Threads REQUIRED)
 # audio options - choose appropriate pkg for platform
 # prefer portaudio, jack in that order
 
+find_package(Jack)
 find_package(Portaudio)
-    if(NOT PORTAUDIO_FOUND)
-      message(FATAL_ERROR "Portaudio files not found")
+
+if(NOT PORTAUDIO_FOUND)
+    if(NOT JACK_FOUND)
+        message(FATAL_ERROR "Audio API files not found for Jack and Portaudio")
     endif()
+endif()
+
+#if(PORTAUDIO_FOUND)
+#    set(AUDIO_LIBRARY ${PORTAUDIO_LIBRARIES})
+#    set(AUDIO_DRIVER "${PROJECT_SOURCE_DIR}/Audio/AudioDriver_PA.cpp")
+#endif()
+
+# if no portaudio, use Jack
+if(JACK_FOUND)
+    set(AUDIO_LIBRARY ${JACK_LIBRARIES})
+    set(AUDIO_DRIVER "${PROJECT_SOURCE_DIR}/Audio/AudioDriver_Jack.cpp")
+endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -58,7 +73,7 @@ include_directories( "${PROJECT_SOURCE_DIR}/Audio"
                      "${PROJECT_SOURCE_DIR}/Data_Fifo" 
                     )
 
-set(SOURCE main.cpp "${PROJECT_SOURCE_DIR}/Audio/AudioDriver.cpp")
+set(SOURCE main.cpp "${PROJECT_SOURCE_DIR}/Audio/SynthContext.cpp" ${AUDIO_DRIVER})
 
 #***************************
 # some global compile flags
@@ -93,4 +108,4 @@ endif()
 #*********************
 
 add_executable(${BIN_NAME} ${SOURCE} )
-target_link_libraries(${BIN_NAME} ${COMP_NAME} ${PORTAUDIO_LIBRARIES})
+target_link_libraries(${BIN_NAME} ${COMP_NAME} ${AUDIO_LIBRARY})

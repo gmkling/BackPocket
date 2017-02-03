@@ -10,6 +10,9 @@
 #include <jack/jack.h>
 #include "SynthContext.hpp"
 
+
+// Generic interface
+
 class AudioDriver
 {
 public: 
@@ -26,6 +29,7 @@ public:
 	SynthContext *synthCon;
 };
 
+// Jack implementation
 class AudioDriver_Jack : public AudioDriver
 {
 public:
@@ -42,8 +46,10 @@ public:
 
 	void createInputPorts(jack_client_t *theClient, int nPorts);
 	void createOutputPorts(jack_client_t *theClient, int nPorts);
+	void connectPorts(const char *src, const char *dest);
 
 	const char* jackClientName = "KlingSynth";
+	char* client_name;
 	jack_options_t jackOptions;
 	jack_status_t jackStatus;
 
@@ -51,13 +57,13 @@ public:
 	jack_port_t  **inputPorts;
 	jack_port_t  **outputPorts;
 
-	float *inputBuffers;
-	float *outputBuffers;
+	float **inputBuffers;
+	float **outputBuffers;
 
 	double jack_sRate=0;
 	int jack_bufSize=0;
 
-}
+};
 
 class AudioDriver_PA : public AudioDriver
 {
