@@ -24,7 +24,7 @@
 class SynthContext; 
 
 
-typedef void (*GraphFunc)(SynthContext*, int);
+typedef void (*GraphFunc)(SynthContext*);
 
 class SynthContext
 {

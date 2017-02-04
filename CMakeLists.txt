@@ -21,8 +21,9 @@ find_package(Threads REQUIRED)
 # audio options - choose appropriate pkg for platform
 # prefer portaudio, jack in that order
 
-find_package(Jack)
+
 find_package(Portaudio)
+find_package(Jack)
 
 if(NOT PORTAUDIO_FOUND)
     if(NOT JACK_FOUND)
@@ -32,12 +33,16 @@ endif()
 
 #if(PORTAUDIO_FOUND)
 #    set(AUDIO_LIBRARY ${PORTAUDIO_LIBRARIES})
+#    add_definitions(${PORTAUDIO_DEFINITIONS})
+#    include_directories(${PORTAUDIO_INCLUDE_DIRS})
 #    set(AUDIO_DRIVER "${PROJECT_SOURCE_DIR}/Audio/AudioDriver_PA.cpp")
 #endif()
 
 # if no portaudio, use Jack
 if(JACK_FOUND)
     set(AUDIO_LIBRARY ${JACK_LIBRARIES})
+    add_definitions(${JACK_DEFINITIONS})
+    include_directories(${JACK_INCLUDE_DIRS})
     set(AUDIO_DRIVER "${PROJECT_SOURCE_DIR}/Audio/AudioDriver_Jack.cpp")
 endif()
 
@@ -106,6 +111,6 @@ endif()
 #*********************
 # Build the thing
 #*********************
-
+message(STATUS ${PORTAUDIO_INCLUDE_DIRS})
 add_executable(${BIN_NAME} ${SOURCE} )
 target_link_libraries(${BIN_NAME} ${COMP_NAME} ${AUDIO_LIBRARY})

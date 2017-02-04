@@ -64,15 +64,41 @@ AudioDriver_PA::~AudioDriver_PA()
 bool AudioDriver_PA::setupAudio()
 {
 	PaError theErr;
+	PaStreamParameters outputParams, inputParams;
 
-	
+	// get the default device for now
+	// need to circle back to design a way to manage this
+	outputParams.device = Pa_GetDefaultOutputDevice(); 
+    if (outputParams.device == paNoDevice) 
+    {
+      paPrintError(paNoDevice,"setupAudio() (output) ");
+    }
+    
+    inputParams.device = Pa_GetDefaultInputDevice();
+    if (inputParams.device == paNoDevice) 
+    {
+      paPrintError(paNoDevice,"setupAudio() (input) ");
+    }
+
+	outputParams.channelCount = synthCon->nChanOut;
+	inputParams.channelCount = synthCon->nChanIn;
+	outputParams.sampleFormat = paFloat32;
+	inputParams.sampleFormat = paFloat32;
+	outputParams.suggestedLatency = Pa_GetDeviceInfo( outputParams.device )->defaultLowOutputLatency;
+	inputParams.suggestedLatency = Pa_GetDeviceInfo( inputParams.device )->defaultLowOutputLatency;
+    outputParams.hostApiSpecificStreamInfo = NULL;
+	inputParams.hostApiSpecificStreamInfo = NULL;
+
 
     // open a default stream
-    theErr = Pa_OpenDefaultStream( &theStream, 
-    							synthCon->nChanIn, synthCon->nChanOut, 
-    							paFloat32, 
-    							synthCon->sRate, synthCon->blockSize, 
-    							paCallbackFunc, this );
+    theErr = Pa_OpenStream( &theStream, 
+    							&inputParams, 
+    							&outputParams,  
+    							synthCon->sRate, 
+    							synthCon->blockSize, 
+    							paClipOff,
+    							paCallbackFunc, 
+    							this );
     if( theErr != paNoError )
     {
 		paPrintError( theErr, "setupAudio" );
@@ -103,9 +129,16 @@ bool AudioDriver_PA::stopAudio()
 
 	if( theErr != paNoError )
 	{
-		paPrintError(theErr, "stopAudio");
+		paPrintError(theErr, "stopAudio (Pa_StopStream)");
 	}
 
+	// theErr = Pa_CloseStream( theStream );
+	
+	// if( theErr != paNoError )
+	// {
+	// 	paPrintError(theErr, "stopAudio (Pa_CloseStream)");
+	// }
+	
 	return theErr == paNoError;
 }
 
@@ -136,7 +169,7 @@ int AudioDriver_PA::PortAudioCallback(const void *input, void *output,
 	}
 
 	// calculate graph
-	synthCon->theGraph(synthCon, samplesPerBlock);
+	synthCon->theGraph(synthCon);
 
 	// copy output to output
 	for( int i = 0; i<synthCon->nChanOut; i++)

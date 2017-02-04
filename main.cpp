@@ -11,14 +11,16 @@
 #include <thread>
 #include <iostream>
 #include <cmath>
+#include <unistd.h>
 
 // audio test function blocks
 const double twoPI = 6.283185307;
 
-void testSine(SynthContext *synthCon, int nSamps)
+void testSine(SynthContext *synthCon)
 {
 	// grab the buffer from the synth context - very brute force for now
 	float *sample = synthCon->outputBuffers;
+	int nSamps = synthCon->blockSize;
 
 	static double phaseIncr = (twoPI/synthCon->sRate) * 440.0;
 	static double phase = 0;
@@ -55,9 +57,13 @@ int main(int argc, char* argv[])
 	// listen for events
 
 	// wait a while
-	using namespace std::chrono_literals;
-	std::this_thread::sleep_for(10s);
-
+	//using namespace std::chrono_literals;
+	//std::this_thread::sleep_for(10s);
+	sleep(10);
 	// exit
+	std::cout<<"Time to stop..."<<std::endl;
+
 	theSynth->stop();
+
+	
 }

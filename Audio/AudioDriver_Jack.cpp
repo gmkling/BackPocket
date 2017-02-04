@@ -55,6 +55,7 @@ void printJackErr(jack_status_t *status, const char* funcName)
 AudioDriver_Jack::AudioDriver_Jack(SynthContext *theSynth): AudioDriver(theSynth)
 {
 	jackOptions = JackNullOption;
+
 }
 
 AudioDriver_Jack::~AudioDriver_Jack()
@@ -117,6 +118,7 @@ void AudioDriver_Jack::connectPorts(const char *src, const char *dest)
 	if ( err )
 	{
 		std::cout<<"Jack: Error connecting ports: "<<src<<" and "<<dest<<std::endl;
+		std::cout<<err<<std::endl;
 		//printJackErr(err, "connectPorts ");
 		return;
 	}
@@ -166,8 +168,8 @@ bool AudioDriver_Jack::startAudio()
     synthCon->blockSize = jack_bufSize;
 
     // create ports
-    //createInputPorts(clientPtr, synthCon->nChanIn);
-    //createOutputPorts(clientPtr, synthCon->nChanOut);
+    createInputPorts(clientPtr, synthCon->nChanIn);
+    createOutputPorts(clientPtr, synthCon->nChanOut);
 
     // activate jack
     int jackErr = jack_activate(clientPtr);
@@ -178,33 +180,37 @@ bool AudioDriver_Jack::startAudio()
     	return false;
     }
     
-    // connect ports
-    const char **jackPortOut = jack_get_ports(clientPtr, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
-    const char **jackPortIn = jack_get_ports(clientPtr, NULL, NULL, JackPortIsPhysical|JackPortIsOutput);
+    // get jack ports
+    const char **jackPortOut = jack_get_ports(clientPtr, NULL, NULL, JackPortIsPhysical|JackPortIsOutput);
+    const char **jackPortIn = jack_get_ports(clientPtr, NULL, NULL, JackPortIsPhysical|JackPortIsInput);
 
-    // input 
-    connectPorts(jackPortOut[0], jack_port_name(outputPorts[0]));
-    connectPorts(jackPortIn[0], jack_port_name(inputPorts[0]));
+    // connect them up
+    connectPorts(jackPortOut[0], jack_port_name(inputPorts[0]));
+    connectPorts(jack_port_name(outputPorts[0]), jackPortIn[0]);
 
-    free(jackPortIn);
-    free(jackPortOut);
+    // free(jackPortIn);
+    // free(jackPortOut);
+
+    std::cout<<"AudioDriver started."<<std::endl;
     return true;
 }
 
 bool AudioDriver_Jack::stopAudio()
 {
-	int jackErr;
+	int jackErr = 0;
 
-	if(clientPtr)
-	{
-		jackErr = jack_deactivate(clientPtr);
-	}
+	jack_client_close(clientPtr);
+
+	// if(clientPtr)
+	// {
+	// 	jackErr = jack_deactivate(clientPtr);
+	// }
 
 	if (jackErr)
 	{
 		printJackErr(&jackStatus, "stopAudio (jack_deactivate)" );
 	}
-
+	std::cout<<"AudioDriver stopped."<<std::endl;
 	return true;
 }
 
@@ -212,14 +218,18 @@ int AudioDriver_Jack::jackCallback(jack_nframes_t nFrames, void *arg)
 {
 	jack_default_audio_sample_t **inputChBufs = inputBuffers;
 	jack_default_audio_sample_t **outputChBufs = outputBuffers;
+	SynthContext* parentSynth = ((AudioDriver_Jack*)arg)->synthCon;
+
+	int nIn = synthCon->nChanIn;
+	int nOut = synthCon->nChanOut;
 	
 	// grab the i/o pointers
-	for(int i=0; i<synthCon->nChanIn; i++)
+	for(int i=0; i<nIn; i++)
 	{
 		inputChBufs[i] = (float*)jack_port_get_buffer(inputPorts[i], nFrames);
 	}
 	
-	for(int i=0; i<synthCon->nChanIn; i++)
+	for(int i=0; i<nOut; i++)
 	{
 		outputChBufs[i] = (float*)jack_port_get_buffer(outputPorts[i], nFrames);
 	}
@@ -233,7 +243,7 @@ int AudioDriver_Jack::jackCallback(jack_nframes_t nFrames, void *arg)
 	// process commands
 
 	// copy input to buffers
-	for( int i = 0; i<synthCon->nChanIn; i++)
+	for( int i = 0; i<nIn; i++)
 	{
 		float *inBuf = inputChBufs[i] + position;
 		float *sythInBufPtr = synthInBuf + i*samplesPerBlock;
@@ -245,15 +255,15 @@ int AudioDriver_Jack::jackCallback(jack_nframes_t nFrames, void *arg)
 	}
 
 	// calculate graph
-	synthCon->theGraph(synthCon, samplesPerBlock);
+	parentSynth->theGraph(parentSynth);
 
 	// copy output to output
-	for( int i = 0; i<synthCon->nChanOut; i++)
+	for( int i = 0; i<nOut; i++)
 	{
 		float *outBuf = outputChBufs[i] + position;
 		float *synthOutBufPtr = synthOutBuf + i*samplesPerBlock;
 
-		for( int j =0; j<synthCon->blockSize; j++)
+		for( int j =0; j<samplesPerBlock; j++)
 		{
 			*outBuf++ = *synthOutBufPtr++;
 		}

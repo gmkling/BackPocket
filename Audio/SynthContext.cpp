@@ -38,7 +38,10 @@ void SynthContext::addGraph(GraphFunc inFunc)
 void SynthContext::start()
 {
 	// check we are ready to go first?
-	theAudioDriver->startAudio();
+	if(theAudioDriver->setupAudio())
+	{
+		theAudioDriver->startAudio();
+	}
 }
 
 void SynthContext::stop()
