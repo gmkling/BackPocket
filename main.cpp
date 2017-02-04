@@ -16,6 +16,43 @@
 // audio test function blocks
 const double twoPI = 6.283185307;
 
+// testing code ---->
+
+const int TABLE_SIZE=200;
+typedef struct
+{
+	float sine[TABLE_SIZE];
+	int left_phase;
+	int right_phase;
+}
+paTestData;
+
+paTestData gData;
+
+void sineProcess (SynthContext *synthCon)
+{
+	jack_default_audio_sample_t *out1, *out2;
+	paTestData *data = &gData;
+	int nframes = synthCon->blockSize;
+	int i;
+
+	out1 = synthCon->outputBuffers;
+	out2 = synthCon->outputBuffers + nframes;
+
+	for( i=0; i<nframes; i++ )
+	{
+		out1[i] = data->sine[data->left_phase];  /* left */
+		out2[i] = data->sine[data->right_phase];  /* right */
+		data->left_phase += 1;
+		if( data->left_phase >= TABLE_SIZE ) data->left_phase -= TABLE_SIZE;
+		data->right_phase += 3; /* higher pitch so we can distinguish left and right. */
+		if( data->right_phase >= TABLE_SIZE ) data->right_phase -= TABLE_SIZE;
+	}
+          
+}
+
+// ----> end
+
 void testSine(SynthContext *synthCon)
 {
 	// grab the buffer from the synth context - very brute force for now
@@ -45,10 +82,16 @@ int main(int argc, char* argv[])
 	// will load options later, defaults are defined in SynthContext
 	SynthContext *theSynth = NewSynth();
 
-	// load / define graph
+	// init the wavetable
+	for(int i=0; i<TABLE_SIZE; i++ )
+	{
+		gData.sine[i] = 0.2 * (float) sin( ((float)i/(float)TABLE_SIZE) * twoPI );
+	}
+	gData.left_phase = gData.right_phase = 0;
+
 
 	// push graph to synth
-	theSynth->addGraph(testSine);
+	theSynth->addGraph(sineProcess);
 
 	std::cout<<"Starting graph processing for 10 sec..."<<std::endl;
 	// start synth/audioDriver
