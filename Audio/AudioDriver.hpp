@@ -11,6 +11,21 @@
 #include "SynthContext.hpp"
 
 
+// testing code ---->
+
+const float M_PI=3.14159265;
+
+const int TABLE_SIZE=200;
+typedef struct
+{
+	float sine[TABLE_SIZE];
+	int left_phase;
+	int right_phase;
+}
+paTestData;
+
+// ----> end
+
 // Generic interface
 
 class AudioDriver
@@ -62,7 +77,7 @@ public:
 
 	double jack_sRate=0;
 	int jack_bufSize=0;
-
+	paTestData data;
 };
 
 class AudioDriver_PA : public AudioDriver

@@ -6,6 +6,9 @@
 #include "AudioDriver.hpp"
 #include <iostream>
 #include <cstdio>
+#include <cmath>
+
+
 
 //////////////////////////
 // Util
@@ -16,8 +19,32 @@ AudioDriver* NewAudioDriver(SynthContext *synthCon)
 	return new AudioDriver_Jack(synthCon);
 }
 
+int process (jack_nframes_t nframes, void *arg)
+{
+	jack_default_audio_sample_t *out1, *out2;
+	paTestData *data = &((AudioDriver_Jack*)arg)->data;
+	jack_port_t **portsOut = ((AudioDriver_Jack*)arg)->outputPorts;
+	int i;
+
+	out1 = (jack_default_audio_sample_t*)jack_port_get_buffer (portsOut[0], nframes);
+	out2 = (jack_default_audio_sample_t*)jack_port_get_buffer (portsOut[1], nframes);
+
+	for( i=0; i<nframes; i++ )
+	{
+		out1[i] = data->sine[data->left_phase];  /* left */
+		out2[i] = data->sine[data->right_phase];  /* right */
+		data->left_phase += 1;
+		if( data->left_phase >= TABLE_SIZE ) data->left_phase -= TABLE_SIZE;
+		data->right_phase += 3; /* higher pitch so we can distinguish left and right. */
+		if( data->right_phase >= TABLE_SIZE ) data->right_phase -= TABLE_SIZE;
+	}
+    
+	return 0;      
+}
+
 int jackCallbackFunc(jack_nframes_t nFrames, void *arg)
 {
+
 	return ((AudioDriver_Jack*)arg)->jackCallback(nFrames, arg);
 }
 
@@ -56,6 +83,7 @@ AudioDriver_Jack::AudioDriver_Jack(SynthContext *theSynth): AudioDriver(theSynth
 {
 	jackOptions = JackNullOption;
 
+	
 }
 
 AudioDriver_Jack::~AudioDriver_Jack()
@@ -131,6 +159,13 @@ bool AudioDriver_Jack::setupAudio()
 {
 	const char* serverName = NULL;
 
+	// init the wavetable
+	for(int i=0; i<TABLE_SIZE; i++ )
+	{
+		data.sine[i] = 0.2 * (float) sin( ((float)i/(float)TABLE_SIZE) * M_PI * 2.0 );
+	}
+	data.left_phase = data.right_phase = 0;
+
 
 	clientPtr = jack_client_open(jackClientName, jackOptions, &jackStatus, serverName);
 
@@ -152,7 +187,8 @@ bool AudioDriver_Jack::setupAudio()
     }
 
     // set callbacks
-    jack_set_process_callback(clientPtr, jackCallbackFunc, this);
+//    jack_set_process_callback(clientPtr, jackCallbackFunc, this);
+    jack_set_process_callback(clientPtr, process, this);
     jack_on_shutdown(clientPtr, jackShutdownCallback, this);
 
     return true;
