@@ -17,7 +17,7 @@
 // putting in these big ugle pound-defines until I have some prefs set up
 // UGLY******************************************************************
 // FIXME!
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 256 // especially UGLY we can overrun this if Jack has a different size! Must do this dynamically!
 #define SAMPLE_RATE 44100.0
 #define NCHAN 2
 

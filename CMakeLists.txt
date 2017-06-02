@@ -21,9 +21,9 @@ find_package(Threads REQUIRED)
 # audio options - choose appropriate pkg for platform
 # prefer portaudio, jack in that order
 
-
 find_package(Portaudio)
 find_package(Jack)
+find_package(libsndfile)
 
 if(NOT PORTAUDIO_FOUND)
     if(NOT JACK_FOUND)
